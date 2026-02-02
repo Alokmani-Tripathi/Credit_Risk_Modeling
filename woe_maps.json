@@ -11,7 +11,7 @@
         "OWN": -0.040206,
         "RENT": -0.19211
     },
-    "purpose": {
+    "purpose_group": {
         "wedding": 0.265251,
         "vacation": 0.265251,
         "car": 0.265251,
