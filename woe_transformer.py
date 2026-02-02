@@ -90,10 +90,16 @@ def bin_inq_6mths(x):
         return "2+"
 
 
-def get_purpose_woe(purpose_raw):
-    purpose_raw = purpose_raw.lower()
-    return get_woe("purpose_group", purpose_raw)
+#def get_purpose_woe(purpose_raw):
+    #purpose_raw = purpose_raw.lower()
+    #return get_woe("purpose_group", purpose_raw)
 
+def get_purpose_woe(purpose_raw):
+    if purpose_raw is None:
+        return get_woe("purpose_group", "Missing")
+
+    purpose_raw = purpose_raw.lower().strip()
+    return get_woe("purpose_group", purpose_raw)
 
 def transform_user_input_to_woe(user_input):
     """
