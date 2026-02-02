@@ -92,7 +92,7 @@ def bin_inq_6mths(x):
 
 def get_purpose_woe(purpose_raw):
     purpose_raw = purpose_raw.lower()
-    return get_woe("purpose_group", purpose_raw)
+    return get_woe("purpose", purpose_raw)
 
 
 def transform_user_input_to_woe(user_input):
@@ -104,7 +104,7 @@ def transform_user_input_to_woe(user_input):
 
     data["emp_length"] = get_woe("emp_length", user_input["emp_length"])
     data["home_ownership"] = get_woe("home_ownership", user_input["home_ownership"])
-    data["purpose_group"] = get_purpose_woe(user_input["purpose"])
+    data["purpose"] = get_purpose_woe(user_input["purpose"])
     data["term"] = get_woe("term", user_input["term"])
     data["verification_status"] = get_woe("verification_status", user_input["verification_status"])
     data["credit_age"] = get_woe("credit_age", user_input["credit_age_bin"])
@@ -127,7 +127,7 @@ def transform_user_input_to_woe(user_input):
     EXPECTED_FEATURE_ORDER = [
     'emp_length',
     'home_ownership',
-    'purpose_group',
+    'purpose',
     'term',
     'verification_status',
     'credit_age',
