@@ -6,7 +6,7 @@ import numpy as np
 # ============================================================
 
 BASE_SCORE = 600        # score at base odds
-BASE_ODDS = 50          # good:bad odds at base score
+BASE_ODDS = 20         # good:bad odds at base score
 PDO = 50                # points to double odds
 
 
