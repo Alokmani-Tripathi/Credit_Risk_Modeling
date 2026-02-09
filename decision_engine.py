@@ -1,5 +1,3 @@
-
-
 # ============================================================
 # Credit Decision Engine
 # ============================================================
@@ -39,20 +37,6 @@ def decision_with_reason(
 ) -> dict:
     """
     Final credit decision with business explanation
-
-    Parameters
-    ----------
-    score : float
-        Credit score
-    pd : float, optional
-        Probability of Default (if available)
-    model_name : str
-        Model identifier (Logistic / XGBoost)
-
-    Returns
-    -------
-    dict
-        Decision output
     """
 
     risk_band = score_to_risk_band(score)
@@ -69,12 +53,29 @@ def decision_with_reason(
         "model": model_name,
         "decision": decision,
         "risk_band": risk_band,
-        "score": round(score, 0)
+        "score": round(score, 0),
+        "reason": reason
     }
 
     if pd is not None:
         result["pd_percent"] = round(pd * 100, 2)
 
-    result["reason"] = reason
-
     return result
+
+
+# ============================================================
+# REQUIRED WRAPPER (THIS FIXES YOUR ERROR)
+# ============================================================
+
+def make_decision(pd: float, score: float, model_name: str = "MODEL") -> dict:
+    """
+    Wrapper used by Champion–Challenger engine.
+    Converts PD + score into final decision dict.
+    """
+    return decision_with_reason(
+        score=score,
+        pd=pd,
+        model_name=model_name
+    )
+
+
