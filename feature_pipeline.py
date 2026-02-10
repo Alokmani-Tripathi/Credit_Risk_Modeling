@@ -64,6 +64,52 @@ def bin_revol_util(util: float) -> str:
         return "60%+"
 
 
+def bin_int_rate(rate: float) -> str:
+    if rate < 10:
+        return "<10%"
+    elif rate < 15:
+        return "10-15%"
+    elif rate < 20:
+        return "15-20%"
+    else:
+        return "20%+"
+
+
+def bin_credit_age(months: float) -> str:
+    if months < 24:
+        return "<2y"
+    elif months < 60:
+        return "2-5y"
+    elif months < 120:
+        return "5-10y"
+    else:
+        return "10y+"
+
+
+def bin_bc_util(util: float) -> str:
+    if util < 30:
+        return "<30%"
+    elif util < 60:
+        return "30-59%"
+    elif util < 75:
+        return "60-74%"
+    else:
+        return "75%+"
+
+
+def bin_percent_bc_gt_75(pct: float) -> str:
+    if pct == 0:
+        return "0%"
+    elif pct < 25:
+        return "1-24%"
+    elif pct < 50:
+        return "25-49%"
+    elif pct < 75:
+        return "50-74%"
+    else:
+        return "75%+"
+
+
 def safe_woe(feature: str, bin_label: str) -> float:
     """
     Safe WOE lookup with fallback
@@ -74,49 +120,6 @@ def safe_woe(feature: str, bin_label: str) -> float:
 # ============================================================
 # LOGISTIC REGRESSION PIPELINE
 # ============================================================
-
-# def prepare_lr_input(user_input: dict) -> pd.DataFrame:
-#     """
-#     RAW → BIN → WOE → LR feature dataframe (18 columns)
-#     """
-
-#     data = {}
-
-#     # Numeric with binning
-#     data["fico"] = safe_woe("fico", bin_fico(user_input["fico"]))
-#     data["dti"] = safe_woe("dti", bin_dti(user_input["dti"]))
-#     data["loan_amnt"] = safe_woe("loan_amnt", bin_loan_amnt(user_input["loan_amnt"]))
-#     data["revol_util"] = safe_woe("revol_util", bin_revol_util(user_input["revol_util"]))
-
-#     # Numeric without binning (already categorical-like)
-#     data["inq_last_6mths"] = safe_woe("inq_last_6mths", str(user_input["inq_last_6mths"]))
-#     data["acc_open_past_24mths"] = safe_woe(
-#         "acc_open_past_24mths", str(user_input["acc_open_past_24mths"])
-#     )
-#     data["avg_cur_bal"] = safe_woe("avg_cur_bal", str(user_input["avg_cur_bal"]))
-#     data["mort_acc"] = safe_woe("mort_acc", str(user_input["mort_acc"]))
-#     data["total_bc_limit"] = safe_woe("total_bc_limit", str(user_input["total_bc_limit"]))
-#     data["mo_sin_old_rev_tl_op"] = safe_woe(
-#         "mo_sin_old_rev_tl_op", str(user_input["mo_sin_old_rev_tl_op"])
-#     )
-#     data["mo_sin_rcnt_tl"] = safe_woe(
-#         "mo_sin_rcnt_tl", str(user_input["mo_sin_rcnt_tl"])
-#     )
-#     data["delinq_2yrs"] = safe_woe("delinq_2yrs", str(user_input["delinq_2yrs"]))
-
-#     # Pure categorical
-#     data["term"] = safe_woe("term", str(user_input["term"]))
-#     data["emp_length"] = safe_woe("emp_length", user_input["emp_length"])
-#     data["home_ownership"] = safe_woe("home_ownership", user_input["home_ownership"])
-#     data["annual_inc"] = safe_woe("annual_inc", str(user_input["annual_inc"]))
-#     data["purpose"] = safe_woe("purpose", user_input["purpose"])
-#     data["verification_status"] = safe_woe(
-#         "verification_status", user_input["verification_status"]
-#     )
-
-#     # Enforce correct feature order
-#     return pd.DataFrame([[data[f] for f in LR_FEATURES]], columns=LR_FEATURES)
-
 
 def prepare_lr_input(user_input: dict) -> pd.DataFrame:
     """
@@ -179,14 +182,18 @@ def prepare_lr_input(user_input: dict) -> pd.DataFrame:
     data["credit_age"] = safe_woe("credit_age", bin_credit_age(credit_age))
 
     # ------------------------
-    # BC FEATURES (MISSING EARLIER)
+    # BC FEATURES
     # ------------------------
-    data["bc_util"] = safe_woe("bc_util", bin_bc_util(user_input.get("bc_util", 0)))
-    data["percent_bc_gt_75"] = safe_woe(
-        "percent_bc_gt_75", bin_percent_bc_gt_75(user_input.get("percent_bc_gt_75", 0))
+    data["bc_util"] = safe_woe(
+        "bc_util", bin_bc_util(user_input.get("bc_util", 0))
     )
 
-    # Enforce exact order
+    data["percent_bc_gt_75"] = safe_woe(
+        "percent_bc_gt_75",
+        bin_percent_bc_gt_75(user_input.get("percent_bc_gt_75", 0))
+    )
+
+    # Enforce exact feature order
     return pd.DataFrame([[data[f] for f in LR_FEATURES]], columns=LR_FEATURES)
 
 
@@ -199,10 +206,6 @@ def prepare_xgb_input(user_input: dict) -> pd.DataFrame:
     RAW → XGB feature dataframe (24 columns)
     """
 
-    row = {}
-
-    for feature in XGB_FEATURES:
-        # Direct passthrough
-        row[feature] = user_input.get(feature, 0)
+    row = {feature: user_input.get(feature, 0) for feature in XGB_FEATURES}
 
     return pd.DataFrame([row], columns=XGB_FEATURES)
