@@ -200,91 +200,91 @@ def prepare_lr_input(user_input: dict) -> pd.DataFrame:
 # ============================================================
 # XGBOOST PIPELINE
 # ============================================================
-
-# def prepare_xgb_input(user_input: dict) -> pd.DataFrame:
-#     """
-#     RAW → XGB feature dataframe (24 columns)
-#     """
-
-#     row = {feature: user_input.get(feature, 0) for feature in XGB_FEATURES}
-
-#     return pd.DataFrame([row], columns=XGB_FEATURES)
-
-
 def prepare_xgb_input(user_input: dict) -> pd.DataFrame:
     """
-    RAW → XGB feature dataframe (numeric only)
+    Rebuild EXACT XGBoost training feature space (one-hot encoded)
     """
 
-    # Explicit encodings (MUST match training)
+    # EXACT feature list from training
+    XGB_TRAIN_FEATURES = [
+        'grade',
+        'sub_grade',
+        'fico_range_low',
+        'term',
+        'int_rate',
+        'loan_amnt',
+        'annual_inc',
+        'dti',
+        'emp_length',
+        'verification_status_Source Verified',
+        'home_ownership_MORTGAGE',
+        'home_ownership_RENT',
+        'mort_acc',
+        'acc_open_past_24mths',
+        'num_actv_rev_tl',
+        'delinq_2yrs',
+        'mths_since_recent_bc',
+        'mths_since_recent_inq',
+        'mo_sin_old_rev_tl_op',
+        'mo_sin_rcnt_tl',
+        'avg_cur_bal',
+        'tot_cur_bal',
+        'total_bc_limit',
+        'purpose_small_business'
+    ]
+
+    row = {f: 0 for f in XGB_TRAIN_FEATURES}
+
+    # -------------------------
+    # NUMERIC (DIRECT)
+    # -------------------------
+    numeric_fields = [
+        'fico_range_low', 'term', 'int_rate', 'loan_amnt', 'annual_inc', 'dti',
+        'mort_acc', 'acc_open_past_24mths', 'num_actv_rev_tl',
+        'delinq_2yrs', 'mths_since_recent_bc', 'mths_since_recent_inq',
+        'mo_sin_old_rev_tl_op', 'mo_sin_rcnt_tl', 'avg_cur_bal',
+        'tot_cur_bal', 'total_bc_limit'
+    ]
+
+    for f in numeric_fields:
+        row[f] = user_input.get(f, 0)
+
+    # -------------------------
+    # ORDINAL
+    # -------------------------
     grade_map = {"A": 1, "B": 2, "C": 3, "D": 4, "E": 5, "F": 6, "G": 7}
+    row["grade"] = grade_map.get(user_input.get("grade"), 0)
 
     sub_grade_map = {
         f"{g}{i}": idx
         for idx, (g, i) in enumerate(
-            [(g, i) for g in "ABCDEFG" for i in range(1, 6)],
-            start=1
+            [(g, i) for g in "ABCDEFG" for i in range(1, 6)], start=1
         )
     }
+    row["sub_grade"] = sub_grade_map.get(user_input.get("sub_grade"), 0)
 
     emp_length_map = {
-        "<1": 0,
-        "1-3": 1,
-        "3-5": 2,
-        "5-10": 3,
-        "10+": 4,
-        "Missing": -1
+        "<1": 0, "1-3": 1, "3-5": 2, "5-10": 3, "10+": 4, "Missing": 0
     }
+    row["emp_length"] = emp_length_map.get(user_input.get("emp_length"), 0)
 
-    home_ownership_map = {
-        "RENT": 0,
-        "OWN": 1,
-        "MORTGAGE": 2,
-        "OTHER": 3
-    }
+    # -------------------------
+    # ONE-HOT ENCODED CATEGORICALS
+    # -------------------------
+    if user_input.get("home_ownership") == "MORTGAGE":
+        row["home_ownership_MORTGAGE"] = 1
+    if user_input.get("home_ownership") == "RENT":
+        row["home_ownership_RENT"] = 1
 
-    verification_status_map = {
-        "Not Verified": 0,
-        "Source Verified": 1,
-        "Verified": 2
-    }
+    if user_input.get("verification_status") == "Source Verified":
+        row["verification_status_Source Verified"] = 1
 
-    purpose_map = {
-        "debt_consolidation": 0,
-        "credit_card": 1,
-        "home_improvement": 2,
-        "small_business": 3,
-        "other": 4
-    }
+    if user_input.get("purpose") == "small_business":
+        row["purpose_small_business"] = 1
 
-    row = {}
+    return pd.DataFrame([row], columns=XGB_TRAIN_FEATURES)
 
-    for feature in XGB_FEATURES:
-        if feature == "grade":
-            row[feature] = grade_map.get(user_input["grade"], -1)
 
-        elif feature == "sub_grade":
-            row[feature] = sub_grade_map.get(user_input["sub_grade"], -1)
-
-        elif feature == "emp_length":
-            row[feature] = emp_length_map.get(user_input["emp_length"], -1)
-
-        elif feature == "home_ownership":
-            row[feature] = home_ownership_map.get(user_input["home_ownership"], -1)
-
-        elif feature == "verification_status":
-            row[feature] = verification_status_map.get(
-                user_input["verification_status"], -1
-            )
-
-        elif feature == "purpose":
-            row[feature] = purpose_map.get(user_input["purpose"], -1)
-
-        else:
-            # Numeric passthrough
-            row[feature] = user_input.get(feature, 0)
-
-    return pd.DataFrame([row], columns=XGB_FEATURES)
 
 
 
