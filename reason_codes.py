@@ -1,67 +1,112 @@
-
+# ============================================================
 # reason_codes.py
+# ------------------------------------------------------------
+# Purpose:
+# Generate reason codes for Logistic Regression (WOE-based)
+# ------------------------------------------------------------
+# Input  : WOE-transformed dataframe (1 row)
+# Model  : Trained Logistic Regression
+# Output : Top risk-increasing & risk-reducing factors
+# ============================================================
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 
-# Human-readable explanations
-REASON_MAP = {
-    "fico": "Low credit score",
-    "int_rate": "High interest rate",
-    "dti": "High debt-to-income ratio",
-    "revol_util": "High revolving credit utilization",
-    "bc_util": "High bankcard utilization",
-    "percent_bc_gt_75": "Many bankcards over 75% utilization",
-    "annual_inc": "Low annual income",
-    "loan_amnt": "High loan amount requested",
-    "inq_last_6mths": "Recent credit inquiries",
-    "acc_open_past_24mths": "Many recently opened accounts",
-    "mo_sin_rcnt_tl": "Very recent credit activity",
-    "mths_since_recent_inq": "Very recent credit inquiry",
-    "credit_age": "Short credit history",
-    "emp_length": "Short employment history",
-    "home_ownership": "Risky home ownership profile",
-    "purpose_group": "High-risk loan purpose",
-    "term": "Longer loan tenure",
-    "verification_status": "Income not fully verified"
-}
 
+# ============================================================
+# PUBLIC FUNCTION
+# ============================================================
 
 def get_reason_codes(
     woe_df: pd.DataFrame,
-    model,
-    top_n: int = 5
-):
+    lr_model,
+    top_n: int = 3
+) -> dict:
     """
-    Generate top positive & negative reason codes
+    Generate reason codes for a Logistic Regression scorecard.
+
+    Parameters
+    ----------
+    woe_df : pd.DataFrame
+        Single-row dataframe containing WOE-transformed features
+        (columns must match LR_FEATURES order)
+    lr_model : sklearn LogisticRegression
+        Trained LR model
+    top_n : int
+        Number of top positive / negative contributors
+
+    Returns
+    -------
+    dict
+        {
+          "risk_increasing_factors": [...],
+          "risk_reducing_factors": [...]
+        }
     """
 
-    # Model coefficients
-    coef_df = pd.DataFrame({
+    # ----------------------------
+    # Sanity checks
+    # ----------------------------
+    if woe_df.shape[0] != 1:
+        raise ValueError("woe_df must contain exactly one row")
+
+    if len(lr_model.coef_[0]) != woe_df.shape[1]:
+        raise ValueError(
+            "Mismatch between LR coefficients and WOE features"
+        )
+
+    # ----------------------------
+    # Compute contributions
+    # contribution = coef * WOE
+    # ----------------------------
+    coefs = lr_model.coef_[0]
+    values = woe_df.iloc[0].values
+
+    contributions = coefs * values
+
+    contrib_df = pd.DataFrame({
         "feature": woe_df.columns,
-        "woe": woe_df.iloc[0].values,
-        "coef": model.coef_[0]
+        "woe_value": values,
+        "coefficient": coefs,
+        "contribution": contributions
     })
 
-    # Contribution = coef * woe
-    coef_df["contribution"] = coef_df["coef"] * coef_df["woe"]
+    # ----------------------------
+    # Sort contributions
+    # ----------------------------
+    contrib_df = contrib_df.sort_values(
+        by="contribution",
+        ascending=False
+    )
 
-    # Sort by absolute impact
-    coef_df["abs_contribution"] = coef_df["contribution"].abs()
-    coef_df = coef_df.sort_values("abs_contribution", ascending=False)
+    # ----------------------------
+    # Risk interpretation
+    # Positive contribution → higher log-odds of default
+    # Negative contribution → lower log-odds of default
+    # ----------------------------
 
-    # Split drivers
-    negative_drivers = coef_df[coef_df["contribution"] > 0].head(top_n)
-    positive_drivers = coef_df[coef_df["contribution"] < 0].head(top_n)
+    risk_increasing = contrib_df[
+        contrib_df["contribution"] > 0
+    ].head(top_n)
 
-    def explain(row):
-        return REASON_MAP.get(row["feature"], row["feature"])
+    risk_reducing = contrib_df[
+        contrib_df["contribution"] < 0
+    ].tail(top_n)
+
+    # ----------------------------
+    # Format outputs (human-readable)
+    # ----------------------------
+    risk_increasing_factors = [
+        f"{row.feature} (impact: +{row.contribution:.3f})"
+        for row in risk_increasing.itertuples()
+    ]
+
+    risk_reducing_factors = [
+        f"{row.feature} (impact: {row.contribution:.3f})"
+        for row in risk_reducing.itertuples()
+    ]
 
     return {
-        "risk_increasing_factors": [
-            explain(row) for _, row in negative_drivers.iterrows()
-        ],
-        "risk_reducing_factors": [
-            explain(row) for _, row in positive_drivers.iterrows()
-        ]
+        "risk_increasing_factors": risk_increasing_factors,
+        "risk_reducing_factors": risk_reducing_factors
     }
