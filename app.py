@@ -8,7 +8,6 @@
 import streamlit as st
 import joblib
 
-from feature_schema import RAW_FEATURES
 from champion_challenger_engine import run_champion_challenger
 from woe_transformer import transform_user_input_to_woe
 from reason_codes import get_reason_codes
@@ -63,7 +62,6 @@ st.sidebar.header("📋 Borrower Profile")
 
 borrower = {}
 
-# Helper for numeric inputs
 def numeric_input(label, default=0, min_val=0, max_val=1_000_000):
     return st.sidebar.number_input(
         label,
@@ -72,11 +70,8 @@ def numeric_input(label, default=0, min_val=0, max_val=1_000_000):
         value=default
     )
 
-
 # -----------------------------
-# Collect RAW_FEATURES
-# -----------------------------
-# Each feature is rendered with a business-friendly control
+# Loan & Employment
 # -----------------------------
 
 borrower["loan_amnt"] = numeric_input("Loan Amount", 15000, 1000, 50000)
@@ -106,24 +101,53 @@ borrower["verification_status"] = st.sidebar.selectbox(
     ["Not Verified", "Source Verified", "Verified"]
 )
 
+# -----------------------------
+# Credit Profile
+# -----------------------------
+
 borrower["fico"] = numeric_input("FICO Score", 700, 300, 850)
-borrower["fico_range_low"] = borrower["fico"]  # Used by XGB
+borrower["fico_range_low"] = borrower["fico"]  # for XGB
 
 borrower["dti"] = st.sidebar.number_input("Debt-to-Income (%)", 0.0, 60.0, 20.0)
 borrower["inq_last_6mths"] = numeric_input("Inquiries (Last 6 Months)", 1, 0, 10)
-borrower["revol_util"] = st.sidebar.number_input("Revolving Utilization (%)", 0.0, 150.0, 40.0)
 
-borrower["acc_open_past_24mths"] = numeric_input("Accounts Opened (Last 24 Months)", 2, 0, 20)
-borrower["avg_cur_bal"] = numeric_input("Average Current Balance", 12000, 0, 500_000)
-borrower["mort_acc"] = numeric_input("Mortgage Accounts", 1, 0, 10)
-borrower["total_bc_limit"] = numeric_input("Total Bankcard Limit", 20000, 0, 200_000)
+borrower["revol_util"] = st.sidebar.number_input(
+    "Revolving Utilization (%)", 0.0, 150.0, 40.0
+)
 
-borrower["mo_sin_old_rev_tl_op"] = numeric_input("Months Since Oldest Revolving Trade", 120, 0, 500)
-borrower["mo_sin_rcnt_tl"] = numeric_input("Months Since Recent Trade", 9, 0, 300)
-borrower["delinq_2yrs"] = numeric_input("Delinquencies (Last 2 Years)", 0, 0, 10)
+# ✅ MISSING LR FEATURES (NOW FIXED)
+borrower["bc_util"] = st.sidebar.number_input(
+    "Bankcard Utilization (%)", 0.0, 150.0, 35.0
+)
 
-# XGB-only raw features
-borrower["grade"] = st.sidebar.selectbox("Loan Grade", ["A", "B", "C", "D", "E", "F", "G"])
+borrower["percent_bc_gt_75"] = st.sidebar.number_input(
+    "% Bankcards with Utilization > 75%", 0.0, 100.0, 20.0
+)
+
+borrower["acc_open_past_24mths"] = numeric_input(
+    "Accounts Opened (Last 24 Months)", 2, 0, 20
+)
+
+borrower["mo_sin_rcnt_tl"] = numeric_input(
+    "Months Since Recent Trade", 9, 0, 300
+)
+
+borrower["mths_since_recent_inq"] = numeric_input(
+    "Months Since Recent Inquiry", 6, 0, 300
+)
+
+borrower["credit_age_months"] = numeric_input(
+    "Credit Age (Months)", 180, 0, 600
+)
+
+# -----------------------------
+# XGB-only Inputs
+# -----------------------------
+
+borrower["grade"] = st.sidebar.selectbox(
+    "Loan Grade", ["A", "B", "C", "D", "E", "F", "G"]
+)
+
 borrower["sub_grade"] = st.sidebar.selectbox(
     "Loan Sub-Grade",
     ["A1","A2","A3","A4","A5",
@@ -132,10 +156,29 @@ borrower["sub_grade"] = st.sidebar.selectbox(
      "D1","D2","D3","D4","D5"]
 )
 
-borrower["num_actv_rev_tl"] = numeric_input("Active Revolving Trades", 4, 0, 20)
-borrower["mths_since_recent_bc"] = numeric_input("Months Since Recent Bankcard", 18, 0, 300)
-borrower["mths_since_recent_inq"] = numeric_input("Months Since Recent Inquiry", 6, 0, 300)
-borrower["credit_age_months"] = numeric_input("Credit Age (Months)", 180, 0, 600)
+borrower["num_actv_rev_tl"] = numeric_input(
+    "Active Revolving Trades", 4, 0, 20
+)
+
+borrower["mths_since_recent_bc"] = numeric_input(
+    "Months Since Recent Bankcard", 18, 0, 300
+)
+
+borrower["avg_cur_bal"] = numeric_input(
+    "Average Current Balance", 12000, 0, 500_000
+)
+
+borrower["mort_acc"] = numeric_input(
+    "Mortgage Accounts", 1, 0, 10
+)
+
+borrower["total_bc_limit"] = numeric_input(
+    "Total Bankcard Limit", 20000, 0, 200_000
+)
+
+borrower["delinq_2yrs"] = numeric_input(
+    "Delinquencies (Last 2 Years)", 0, 0, 10
+)
 
 
 # ============================================================
@@ -148,7 +191,6 @@ if st.button("🚀 Evaluate Borrower", use_container_width=True):
 
     results = run_champion_challenger(borrower)
 
-    # Agreement banner
     if results["agreement"]:
         st.success("✅ Both models agree on the final decision")
     else:
