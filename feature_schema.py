@@ -59,26 +59,25 @@ RAW_FEATURES = [
 # ------------------------------------------------------------
 
 LR_FEATURES = [
-    "fico",
-    "dti",
-    "loan_amnt",
-    "term",
-    "emp_length",
-    "home_ownership",
-    "annual_inc",
-    "purpose",
-    "verification_status",
-    "inq_last_6mths",
-    "revol_util",
-    "acc_open_past_24mths",
-    "avg_cur_bal",
-    "mort_acc",
-    "total_bc_limit",
-    "mo_sin_old_rev_tl_op",
-    "mo_sin_rcnt_tl",
-    "delinq_2yrs"
+    'emp_length',
+    'home_ownership',
+    'purpose_group',
+    'term',
+    'verification_status',
+    'credit_age',
+    'int_rate',
+    'loan_amnt',
+    'fico',
+    'annual_inc',
+    'inq_last_6mths',
+    'dti',
+    'revol_util',
+    'bc_util',
+    'percent_bc_gt_75',
+    'acc_open_past_24mths',
+    'mo_sin_rcnt_tl',
+    'mths_since_recent_inq'
 ]
-
 
 # ------------------------------------------------------------
 # 3. XGBOOST FEATURES (24 FEATURES – RAW / ENGINEERED SPACE)
