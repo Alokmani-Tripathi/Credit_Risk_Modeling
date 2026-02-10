@@ -9,7 +9,7 @@ import streamlit as st
 import joblib
 
 from champion_challenger_engine import run_champion_challenger
-from woe_transformer import transform_user_input_to_woe
+# from woe_transformer import transform_user_input_to_woe
 from reason_codes import get_reason_codes
 
 
@@ -214,12 +214,10 @@ if st.button("🚀 Evaluate Borrower", use_container_width=True):
         st.caption(lr["reason"])
 
         st.markdown("### 🧠 Reason Codes")
-        woe_df = transform_user_input_to_woe(borrower)
-        reasons = get_reason_codes(woe_df, lr_model)
-
+        X_lr = results["logistic"]["X_lr"]
+        reasons = get_reason_codes(X_lr, lr_model)
         st.write("❌ Risk Increasing Factors:", reasons["risk_increasing_factors"])
         st.write("✅ Risk Reducing Factors:", reasons["risk_reducing_factors"])
-
     # ----------------------------
     # XGBoost
     # ----------------------------
