@@ -30,7 +30,7 @@ def score_to_decision(score: float) -> str:
         return "REJECT"
 
 
-def decision_with_reason(
+def make_decision(
     score: float,
     pd: float | None = None,
     model_name: str = "MODEL"
@@ -63,19 +63,19 @@ def decision_with_reason(
     return result
 
 
-# ============================================================
-# REQUIRED WRAPPER (THIS FIXES YOUR ERROR)
-# ============================================================
+# # ============================================================
+# # REQUIRED WRAPPER (THIS FIXES YOUR ERROR)
+# # ============================================================
 
-def make_decision(pd: float, score: float, model_name: str = "MODEL") -> dict:
-    """
-    Wrapper used by Champion–Challenger engine.
-    Converts PD + score into final decision dict.
-    """
-    return decision_with_reason(
-        score=score,
-        pd=pd,
-        model_name=model_name
-    )
+# def make_decision(pd: float, score: float, model_name: str = "MODEL") -> dict:
+#     """
+#     Wrapper used by Champion–Challenger engine.
+#     Converts PD + score into final decision dict.
+#     """
+#     return decision_with_reason(
+#         score=score,
+#         pd=pd,
+#         model_name=model_name
+#     )
 
 
