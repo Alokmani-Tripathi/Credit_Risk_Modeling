@@ -201,11 +201,93 @@ def prepare_lr_input(user_input: dict) -> pd.DataFrame:
 # XGBOOST PIPELINE
 # ============================================================
 
+# def prepare_xgb_input(user_input: dict) -> pd.DataFrame:
+#     """
+#     RAW → XGB feature dataframe (24 columns)
+#     """
+
+#     row = {feature: user_input.get(feature, 0) for feature in XGB_FEATURES}
+
+#     return pd.DataFrame([row], columns=XGB_FEATURES)
+
+
 def prepare_xgb_input(user_input: dict) -> pd.DataFrame:
     """
-    RAW → XGB feature dataframe (24 columns)
+    RAW → XGB feature dataframe (numeric only)
     """
 
-    row = {feature: user_input.get(feature, 0) for feature in XGB_FEATURES}
+    # Explicit encodings (MUST match training)
+    grade_map = {"A": 1, "B": 2, "C": 3, "D": 4, "E": 5, "F": 6, "G": 7}
+
+    sub_grade_map = {
+        f"{g}{i}": idx
+        for idx, (g, i) in enumerate(
+            [(g, i) for g in "ABCDEFG" for i in range(1, 6)],
+            start=1
+        )
+    }
+
+    emp_length_map = {
+        "<1": 0,
+        "1-3": 1,
+        "3-5": 2,
+        "5-10": 3,
+        "10+": 4,
+        "Missing": -1
+    }
+
+    home_ownership_map = {
+        "RENT": 0,
+        "OWN": 1,
+        "MORTGAGE": 2,
+        "OTHER": 3
+    }
+
+    verification_status_map = {
+        "Not Verified": 0,
+        "Source Verified": 1,
+        "Verified": 2
+    }
+
+    purpose_map = {
+        "debt_consolidation": 0,
+        "credit_card": 1,
+        "home_improvement": 2,
+        "small_business": 3,
+        "other": 4
+    }
+
+    row = {}
+
+    for feature in XGB_FEATURES:
+        if feature == "grade":
+            row[feature] = grade_map.get(user_input["grade"], -1)
+
+        elif feature == "sub_grade":
+            row[feature] = sub_grade_map.get(user_input["sub_grade"], -1)
+
+        elif feature == "emp_length":
+            row[feature] = emp_length_map.get(user_input["emp_length"], -1)
+
+        elif feature == "home_ownership":
+            row[feature] = home_ownership_map.get(user_input["home_ownership"], -1)
+
+        elif feature == "verification_status":
+            row[feature] = verification_status_map.get(
+                user_input["verification_status"], -1
+            )
+
+        elif feature == "purpose":
+            row[feature] = purpose_map.get(user_input["purpose"], -1)
+
+        else:
+            # Numeric passthrough
+            row[feature] = user_input.get(feature, 0)
 
     return pd.DataFrame([row], columns=XGB_FEATURES)
+
+
+
+
+
+
