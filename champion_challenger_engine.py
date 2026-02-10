@@ -89,6 +89,8 @@ def run_champion_challenger(user_input: dict) -> dict:
         model_name="Logistic Regression"
     )
 
+    lr_result["X_lr"] = X_lr
+
     # ----------------------------
     # XGBoost (Challenger)
     # ----------------------------
