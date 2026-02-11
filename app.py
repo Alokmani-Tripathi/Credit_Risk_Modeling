@@ -181,6 +181,65 @@ borrower["delinq_2yrs"] = numeric_input(
 )
 
 
+# # ============================================================
+# # MAIN ACTION
+# # ============================================================
+
+# st.divider()
+
+# if st.button("🚀 Evaluate Borrower", use_container_width=True):
+
+#     results = run_champion_challenger(borrower)
+
+#     if results["agreement"]:
+#         st.success("✅ Both models agree on the final decision")
+#     else:
+#         st.warning("⚠️ Models disagree – manual review recommended")
+
+#     st.divider()
+
+#     col1, col2 = st.columns(2)
+
+#     # ----------------------------
+#     # Logistic Regression
+#     # ----------------------------
+#     with col1:
+#         st.subheader("📘 Logistic Regression (Champion)")
+#         lr = results["logistic"]
+
+#         st.metric("PD (%)", lr["pd_percent"])
+#         st.metric("Credit Score", lr["score"])
+#         st.metric("Risk Band", lr["risk_band"])
+#         st.markdown(f"**Decision:** `{lr['decision']}`")
+#         st.caption(lr["reason"])
+
+#         st.markdown("### 🧠 Reason Codes")
+#         X_lr = results["logistic"]["X_lr"]
+#         reasons = get_reason_codes(X_lr, lr_model)
+#         st.write("❌ Risk Increasing Factors:", reasons["risk_increasing_factors"])
+#         st.write("✅ Risk Reducing Factors:", reasons["risk_reducing_factors"])
+#     # ----------------------------
+#     # XGBoost
+#     # ----------------------------
+#     with col2:
+#         st.subheader("📗 XGBoost (Challenger)")
+#         xgb = results["xgboost"]
+
+#         st.metric("PD (%)", xgb["pd_percent"])
+#         st.metric("Credit Score", xgb["score"])
+#         st.metric("Risk Band", xgb["risk_band"])
+#         st.markdown(f"**Decision:** `{xgb['decision']}`")
+#         st.caption(xgb["reason"])
+
+
+
+
+
+
+
+
+
+
 # ============================================================
 # MAIN ACTION
 # ============================================================
@@ -191,6 +250,27 @@ if st.button("🚀 Evaluate Borrower", use_container_width=True):
 
     results = run_champion_challenger(borrower)
 
+    # -------------------------------------------------------
+    # 🔎 DEBUG SECTION – VERY IMPORTANT
+    # -------------------------------------------------------
+    st.subheader("🔎 DEBUG – Logistic Regression Input Vector")
+
+    X_lr_debug = results["logistic"]["X_lr"]
+    st.write(X_lr_debug)
+
+    st.subheader("🔎 DEBUG – LR Model Expected Feature Order")
+    st.write(lr_model.feature_names_in_)
+
+    # (Optional) XGB debug
+    if "X_xgb" in results["xgboost"]:
+        st.subheader("🔎 DEBUG – XGBoost Input Vector")
+        st.write(results["xgboost"]["X_xgb"])
+
+    st.divider()
+
+    # -------------------------------------------------------
+    # Agreement banner
+    # -------------------------------------------------------
     if results["agreement"]:
         st.success("✅ Both models agree on the final decision")
     else:
@@ -214,10 +294,11 @@ if st.button("🚀 Evaluate Borrower", use_container_width=True):
         st.caption(lr["reason"])
 
         st.markdown("### 🧠 Reason Codes")
-        X_lr = results["logistic"]["X_lr"]
-        reasons = get_reason_codes(X_lr, lr_model)
+        reasons = get_reason_codes(X_lr_debug, lr_model)
+
         st.write("❌ Risk Increasing Factors:", reasons["risk_increasing_factors"])
         st.write("✅ Risk Reducing Factors:", reasons["risk_reducing_factors"])
+
     # ----------------------------
     # XGBoost
     # ----------------------------
@@ -230,3 +311,4 @@ if st.button("🚀 Evaluate Borrower", use_container_width=True):
         st.metric("Risk Band", xgb["risk_band"])
         st.markdown(f"**Decision:** `{xgb['decision']}`")
         st.caption(xgb["reason"])
+
